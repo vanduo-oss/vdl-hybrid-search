@@ -22,7 +22,7 @@ const CDN = {
   ],
 };
 
-export const VDL_HYBRID_SEARCH_VERSION = '0.1.0';
+export const VDL_HYBRID_SEARCH_VERSION = '0.1.1';
 
 export const DEFAULT_DOCS_BASE_URL = 'https://vanduo-oss.github.io/vd3-docs';
 
@@ -87,6 +87,12 @@ export type HybridSearchOptions = {
   modelName?: string;
   loadFuse?: () => Promise<unknown>;
   loadTransformers?: () => Promise<unknown>;
+  /**
+   * Same-origin directory URL for ONNX Runtime WASM assets used by
+   * Transformers.js (e.g. `/transformers-wasm/`). Required under CSP
+   * `script-src 'self'` — Transformers defaults to jsDelivr otherwise.
+   */
+  onnxWasmPaths?: string;
 };
 
 type VectorRow = { id: string; embedding: number[] };
@@ -184,6 +190,7 @@ export class HybridSearch {
 
   private _loadFuse: () => Promise<unknown>;
   private _loadTransformers: () => Promise<unknown>;
+  private _onnxWasmPaths: string | null;
   private _fuse: FuseLike | null = null;
   private _fusePromise: Promise<void> | null = null;
   private _docs: SearchDocument[] | null = null;
@@ -213,6 +220,21 @@ export class HybridSearch {
       typeof options.loadTransformers === 'function'
         ? options.loadTransformers
         : loadTransformersDefault;
+    this._onnxWasmPaths =
+      typeof options.onnxWasmPaths === 'string' && options.onnxWasmPaths.trim()
+        ? options.onnxWasmPaths.trim().replace(/\/?$/, '/')
+        : null;
+  }
+
+  /** Apply CSP-safe ORT WASM paths before Transformers initializes ONNX. */
+  private _applyOnnxWasmPaths(transformers: {
+    env?: { backends?: { onnx?: { wasm?: { wasmPaths?: string } } } };
+  }): void {
+    if (!this._onnxWasmPaths) return;
+    const wasm = transformers.env?.backends?.onnx?.wasm;
+    if (wasm) {
+      wasm.wasmPaths = this._onnxWasmPaths;
+    }
   }
 
   onSemanticProgress(callback: (data: SemanticProgress) => void): () => void {
@@ -297,12 +319,14 @@ export class HybridSearch {
         let vectorsData: { documents: VectorRow[] };
         try {
           const transformers = (await this._loadTransformers()) as {
+            env?: { backends?: { onnx?: { wasm?: { wasmPaths?: string } } } };
             pipeline: (
               task: string,
               model: string,
               opts?: Record<string, unknown>,
             ) => Promise<Extractor> | Extractor;
           };
+          this._applyOnnxWasmPaths(transformers);
 
           const extractorPromise = transformers.pipeline(
             'feature-extraction',

@@ -111,4 +111,49 @@ describe('HybridSearch', () => {
 
     vi.unstubAllGlobals();
   });
+
+  it('applies onnxWasmPaths before pipeline when set', async () => {
+    const wasmEnv = { wasmPaths: 'https://cdn.example/default/' };
+    let pipelineCalled = false;
+    const search = new HybridSearch({
+      indexUrl: 'https://example.test/index.json',
+      vectorsUrl: 'https://example.test/vectors.json',
+      onnxWasmPaths: '/transformers-wasm',
+      loadFuse: async () => ({ default: Fuse }),
+      loadTransformers: async () => ({
+        env: { backends: { onnx: { wasm: wasmEnv } } },
+        pipeline: async () => {
+          pipelineCalled = true;
+          expect(wasmEnv.wasmPaths).toBe('/transformers-wasm/');
+          return async () => ({ data: [1, 0, 0] });
+        },
+      }),
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('vectors')) {
+          return {
+            ok: true,
+            json: async () => ({
+              documents: mockDocs.map((d: { id: string }) => ({
+                id: d.id,
+                embedding: [1, 0, 0, 0],
+              })),
+            }),
+          };
+        }
+        return { ok: true, json: async () => fixture };
+      }),
+    );
+
+    await search.initSemantic();
+    expect(pipelineCalled).toBe(true);
+    expect(wasmEnv.wasmPaths).toBe('/transformers-wasm/');
+    expect(search.isSemanticReady()).toBe(true);
+
+    vi.unstubAllGlobals();
+    HybridSearch.resetCDNCache();
+  });
 });

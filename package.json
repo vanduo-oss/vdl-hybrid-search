@@ -1,6 +1,6 @@
 {
   "name": "@vanduo-oss/vdl-hybrid-search",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vanduo Labs headless hybrid fuzzy+semantic search (VdlHybridSearch)",
   "type": "module",
   "private": true,

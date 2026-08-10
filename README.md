@@ -25,6 +25,9 @@ const search = new HybridSearch({
   vectorsUrl: '/search/vectors.json',
   loadFuse: async () => ({ default: Fuse }),
   loadTransformers: async () => import('@huggingface/transformers'),
+  // CSP script-src 'self': serve ORT WASM from same origin (copy from
+  // @huggingface/transformers/dist) and point here:
+  onnxWasmPaths: '/transformers-wasm/',
 });
 
 await search.initFuzzy();
