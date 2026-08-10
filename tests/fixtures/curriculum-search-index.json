@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-10T00:00:00.000Z",
+  "documents": [
+    {
+      "id": "truthiness-narrowing",
+      "title": "Truthiness narrowing",
+      "category": "Types",
+      "tab": "beginner",
+      "route": "/lessons/types/truthiness-narrowing",
+      "icon": "ph-git-branch",
+      "keywords": ["truthy", "falsy", "narrowing", "if"],
+      "headings": ["Problem", "TypeScript fix", "Insight"],
+      "bodyText": "Truthy checks narrow unions in control flow. Empty string and zero are falsy surprises.",
+      "classes": [],
+      "chunks": [
+        {
+          "type": "paragraph",
+          "text": "Use explicit null checks when zero is valid data.",
+          "heading": "Insight"
+        }
+      ]
+    },
+    {
+      "id": "unknown-vs-any",
+      "title": "unknown vs any",
+      "category": "Runtime boundary",
+      "tab": "beginner",
+      "route": "/lessons/runtime-boundary/unknown-vs-any",
+      "icon": "ph-shield",
+      "keywords": ["unknown", "any", "safety"],
+      "headings": ["Problem", "TypeScript fix"],
+      "bodyText": "unknown forces narrowing before use; any disables checking.",
+      "classes": [],
+      "chunks": []
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+schema: spec-driven
+
+context: |
+  Package: @vanduo-oss/vdl-hybrid-search (MIT, vanduo-oss org, currently private).
+  VdlHybridSearch — headless hybrid fuzzy+semantic search (Fuse.js + Transformers.js).
+  Renamed from labs NeptuneSearch. Zero runtime npm deps; Fuse/Transformers load via
+  CDN or host injectors. Corpus-agnostic index schema via search guardrails.
+  Stack: TypeScript ESM library, vite lib build, vitest. OpenSpec is SoT.
+  No CI while private. ts-school dogfoods via file: and HybridSearch API.
+
+rules:
+  proposal:
+    - Always include a Non-goals section
+    - Call out NeptuneSearch → HybridSearch migration impact
+  specs:
+    - Use Given/When/Then scenario format
+    - Use SHALL/MUST for normative requirements
+  design:
+    - Headless only — hosts own UI (preload/autofocus are host concerns)
+    - Keep injectable loadFuse / loadTransformers
+    - No new runtime npm dependencies
+  tasks:
+    - Include pnpm build and pnpm test when code changes

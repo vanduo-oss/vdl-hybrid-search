@@ -1,0 +1,80 @@
+{
+  "name": "@vanduo-oss/vdl-hybrid-search",
+  "version": "0.1.0",
+  "description": "Vanduo Labs headless hybrid fuzzy+semantic search (VdlHybridSearch)",
+  "type": "module",
+  "private": true,
+  "homepage": "https://github.com/vanduo-oss/vdl-hybrid-search#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanduo-oss/vdl-hybrid-search.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vanduo-oss/vdl-hybrid-search/issues"
+  },
+  "license": "MIT",
+  "author": "vanduo-oss",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "vanduo",
+    "search",
+    "hybrid",
+    "fuzzy",
+    "semantic",
+    "fuse",
+    "transformers"
+  ],
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "scripts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./guardrails/search": {
+      "types": "./dist/guardrails/search.d.ts",
+      "import": "./dist/guardrails/search.js",
+      "require": "./dist/guardrails/search.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "node scripts/clean-dist.mjs && vite build && tsc -p tsconfig.build.json",
+    "prepack": "pnpm run build",
+    "index": "node scripts/hybrid-search-indexer.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\"",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.1.0",
+    "@typescript-eslint/parser": "8.62.0",
+    "eslint": "^10.8.0",
+    "fuse.js": "^7.3.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "8.62.0",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.28.2"
+}
