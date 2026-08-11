@@ -50,10 +50,7 @@ function stripTags(html) {
 }
 
 function extractRegion(html, className) {
-  const re = new RegExp(
-    `<div[^>]*class="[^"]*\\b${className}\\b[^"]*"[^>]*>([\\s\\S]*)$`,
-    'i',
-  );
+  const re = new RegExp(`<div[^>]*class="[^"]*\\b${className}\\b[^"]*"[^>]*>([\\s\\S]*)$`, 'i');
   const m = html.match(re);
   if (!m) return '';
   // Balance div depth from the matched open tag content
@@ -174,7 +171,9 @@ function pageUrl(route) {
 }
 
 function normalizeIcon(icon) {
-  const value = String(icon || 'file-text').trim().replace(/^ph-/, '');
+  const value = String(icon || 'file-text')
+    .trim()
+    .replace(/^ph-/, '');
   return value || 'file-text';
 }
 
@@ -363,7 +362,9 @@ async function main() {
 
   const indexPath = path.join(DATA_DIR, 'search-index.json');
   fs.writeFileSync(indexPath, JSON.stringify({ documents }, null, 2));
-  console.log(`📝 search-index.json written (${(fs.statSync(indexPath).size / 1024).toFixed(1)} KB)`);
+  console.log(
+    `📝 search-index.json written (${(fs.statSync(indexPath).size / 1024).toFixed(1)} KB)`,
+  );
 
   console.log('\n🧠 Loading embedding model...');
   const { pipeline } = await import('@huggingface/transformers');
@@ -375,10 +376,11 @@ async function main() {
   const vectors = [];
   for (let i = 0; i < documents.length; i++) {
     const doc = documents[i];
-    const text = `${doc.title}. ${doc.category}. ${doc.keywords.join('. ')}. ${doc.headings.join('. ')}. ${doc.bodyText}`.slice(
-      0,
-      512,
-    );
+    const text =
+      `${doc.title}. ${doc.category}. ${doc.keywords.join('. ')}. ${doc.headings.join('. ')}. ${doc.bodyText}`.slice(
+        0,
+        512,
+      );
     const output = await extractor(text, { pooling: 'mean', normalize: true });
     vectors.push({ id: doc.id, embedding: Array.from(output.data) });
     if ((i + 1) % 10 === 0 || i === documents.length - 1) {

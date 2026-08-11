@@ -1,12 +1,15 @@
 schema: spec-driven
 
 context: |
-  Package: @vanduo-oss/vdl-hybrid-search (MIT, vanduo-oss org, currently private).
+  Package: @vanduo-oss/vdl-hybrid-search (MIT, vanduo-oss org, publishable).
   VdlHybridSearch — headless hybrid fuzzy+semantic search (Fuse.js + Transformers.js).
   Renamed from labs NeptuneSearch. Zero runtime npm deps; Fuse/Transformers load via
   CDN or host injectors. Corpus-agnostic index schema via search guardrails.
   Stack: TypeScript ESM library, vite lib build, vitest. OpenSpec is SoT.
-  No CI while private. ts-school dogfoods via file: and HybridSearch API.
+  Dual QA gates: CI unit/coverage (mocked loaders, no MiniLM download) via test:ci;
+  local real Fuse + Transformers MiniLM inference via test:local on developer hardware.
+  GitHub Actions CI allowed (format, lint, typecheck, test:ci, build, pack, audit).
+  ts-school dogfoods HybridSearch API (file: until published, then ^0.1.1).
 
 rules:
   proposal:

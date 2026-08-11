@@ -1,7 +1,9 @@
 # vdl-guardrails-search Specification
 
 ## Purpose
-TBD - created by archiving change promote-vdl-hybrid-search. Update Purpose after archive.
+
+Deterministic search guardrails: query normalization/validation, corpus-agnostic
+index and vector payload checks, and safe document href/icon helpers for hosts.
 ## Requirements
 ### Requirement: validate queries
 

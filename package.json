@@ -3,7 +3,6 @@
   "version": "0.1.1",
   "description": "Vanduo Labs headless hybrid fuzzy+semantic search (VdlHybridSearch)",
   "type": "module",
-  "private": true,
   "homepage": "https://github.com/vanduo-oss/vdl-hybrid-search#readme",
   "repository": {
     "type": "git",
@@ -53,17 +52,23 @@
   "scripts": {
     "build": "node scripts/clean-dist.mjs && vite build && tsc -p tsconfig.build.json",
     "prepack": "pnpm run build",
+    "prepublishOnly": "pnpm run build && pnpm run test:ci",
     "index": "node scripts/hybrid-search-indexer.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"scripts/**/*.mjs\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage",
+    "test:local": "pnpm test:ci && vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@huggingface/transformers": "^3.8.1",
     "@types/node": "26.1.0",
     "@typescript-eslint/parser": "8.62.0",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^10.8.0",
     "fuse.js": "^7.3.0",
     "prettier": "^3.9.6",

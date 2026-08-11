@@ -1,7 +1,10 @@
 # vdl-hybrid-search Specification
 
 ## Purpose
-TBD - created by archiving change promote-vdl-hybrid-search. Update Purpose after archive.
+
+Headless HybridSearch combining Fuse.js fuzzy and Transformers.js MiniLM semantic
+retrieval with injectable CDN/host loaders, CSP-safe `onnxWasmPaths`, and
+graceful semantic degradation.
 ## Requirements
 ### Requirement: HybridSearch headless API
 

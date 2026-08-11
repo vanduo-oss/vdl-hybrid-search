@@ -23,10 +23,7 @@ export type SearchIndexDocument = {
   [key: string]: unknown;
 };
 
-export function normalizeSearchQuery(
-  query: unknown,
-  options: { maxLength?: number } = {},
-): string {
+export function normalizeSearchQuery(query: unknown, options: { maxLength?: number } = {}): string {
   const maxLength = options.maxLength ?? 240;
   return normalizeText(query).slice(0, maxLength);
 }
@@ -130,7 +127,11 @@ export function validateSearchIndexPayload(
   options: { maxDocuments?: number } = {},
 ): GuardrailResult {
   const maxDocuments = options.maxDocuments ?? 5000;
-  if (!payload || typeof payload !== 'object' || !Array.isArray((payload as { documents?: unknown }).documents)) {
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !Array.isArray((payload as { documents?: unknown }).documents)
+  ) {
     return block({
       code: 'search.index.shape',
       message: 'Index payload must contain a documents array.',
@@ -171,14 +172,19 @@ export function validateVectorPayload(
   const maxDocuments = options.maxDocuments ?? 5000;
   const maxDimensions = options.maxDimensions ?? 4096;
 
-  if (!payload || typeof payload !== 'object' || !Array.isArray((payload as { documents?: unknown }).documents)) {
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !Array.isArray((payload as { documents?: unknown }).documents)
+  ) {
     return block({
       code: 'search.vectors.shape',
       message: 'Vector payload must contain a documents array.',
     });
   }
 
-  const vectors = (payload as { documents: Array<{ id?: unknown; embedding?: unknown }> }).documents;
+  const vectors = (payload as { documents: Array<{ id?: unknown; embedding?: unknown }> })
+    .documents;
   if (vectors.length === 0)
     return block({ code: 'search.vectors.empty', message: 'Vector documents array is empty.' });
   if (vectors.length > maxDocuments) {

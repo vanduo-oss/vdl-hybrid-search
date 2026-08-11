@@ -1,23 +1,38 @@
 # repo-scaffold Specification
 
 ## Purpose
-TBD - created by archiving change promote-vdl-hybrid-search. Update Purpose after archive.
+
+Package scaffold, publish metadata, and GitHub Actions CI for the publishable
+`@vanduo-oss/vdl-hybrid-search` library.
+
 ## Requirements
+
 ### Requirement: package-metadata
 
-The package MUST declare `@vanduo-oss/vdl-hybrid-search` with exports for `.` and `./guardrails/search`, MIT license, pnpm 10, node `>=20.19.0`. It MAY be `private: true` while unpublished.
+The package MUST be publishable as `@vanduo-oss/vdl-hybrid-search` with public
+`publishConfig`, dual ESM/CJS exports, typed entry points, and MUST NOT set
+`"private": true` once prepared for npm release.
+
+#### Scenario: package is not private
+
+- **WHEN** `package.json` is inspected for a release candidate
+- **THEN** `"private"` MUST be absent or false
+- **AND** `publishConfig.access` MUST be `public`
 
 #### Scenario: version sync
-- **GIVEN** package version `0.1.0`
+
+- **GIVEN** package version `0.1.1`
 - **WHEN** smoke tests run
-- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.1.0`
+- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.1.1`
 
-### Requirement: no-ci-while-private
+### Requirement: github-actions-ci
 
-The repository MUST NOT include GitHub Actions workflows while the package remains private.
+The repository MUST include a GitHub Actions workflow on push/PR to `main` that
+runs format check, lint, typecheck, `test:ci`, build, `pnpm pack --dry-run`, and
+dependency audit.
 
-#### Scenario: absent workflows
-- **GIVEN** repo root
-- **WHEN** `.github/workflows` is checked
-- **THEN** it is absent or empty
+#### Scenario: CI does not require local inference gate
 
+- **WHEN** the CI workflow executes
+- **THEN** it MUST NOT require the local MiniLM/Fuse inference suite to pass as
+  part of remote CI

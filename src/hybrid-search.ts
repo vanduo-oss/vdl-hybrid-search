@@ -134,10 +134,7 @@ async function loadFuseDefault(): Promise<unknown> {
       lastErr = err;
     }
   }
-  console.warn(
-    '[HybridSearch] Failed to load Fuse.js from any CDN:',
-    (lastErr as Error)?.message,
-  );
+  console.warn('[HybridSearch] Failed to load Fuse.js from any CDN:', (lastErr as Error)?.message);
   throw lastErr;
 }
 
@@ -214,8 +211,7 @@ export class HybridSearch {
     this.maxVectorDimensions = options.maxVectorDimensions ?? 4096;
     this.semanticBoost = options.semanticBoost ?? 1.0;
     this.modelName = options.modelName ?? 'Xenova/all-MiniLM-L6-v2';
-    this._loadFuse =
-      typeof options.loadFuse === 'function' ? options.loadFuse : loadFuseDefault;
+    this._loadFuse = typeof options.loadFuse === 'function' ? options.loadFuse : loadFuseDefault;
     this._loadTransformers =
       typeof options.loadTransformers === 'function'
         ? options.loadTransformers
@@ -304,9 +300,7 @@ export class HybridSearch {
     await this.initFuzzy();
     if (this._semanticReady) return;
     if (this._semanticFailed) {
-      throw new Error(
-        'Semantic search previously failed; recreate HybridSearch instance to retry',
-      );
+      throw new Error('Semantic search previously failed; recreate HybridSearch instance to retry');
     }
 
     if (!this._semanticPromise) {
@@ -328,26 +322,18 @@ export class HybridSearch {
           };
           this._applyOnnxWasmPaths(transformers);
 
-          const extractorPromise = transformers.pipeline(
-            'feature-extraction',
-            this.modelName,
-            {
-              quantized: true,
-              progress_callback: (progress: {
-                status?: string;
-                loaded?: number;
-                total?: number;
-              }) => {
-                if (progress?.status === 'progress' && progress.total) {
-                  this._emitSemanticProgress({
-                    stage: 'downloading',
-                    message: `Downloading model… ${Math.round(((progress.loaded || 0) / progress.total) * 100)}%`,
-                    progress,
-                  });
-                }
-              },
+          const extractorPromise = transformers.pipeline('feature-extraction', this.modelName, {
+            quantized: true,
+            progress_callback: (progress: { status?: string; loaded?: number; total?: number }) => {
+              if (progress?.status === 'progress' && progress.total) {
+                this._emitSemanticProgress({
+                  stage: 'downloading',
+                  message: `Downloading model… ${Math.round(((progress.loaded || 0) / progress.total) * 100)}%`,
+                  progress,
+                });
+              }
             },
-          );
+          });
 
           vectorsData = await fetch(this.vectorsUrl).then(async (r) => {
             if (!r.ok) throw new Error(`Failed to load vectors: ${r.status}`);
@@ -363,13 +349,9 @@ export class HybridSearch {
           }
 
           const knownDocIds = new Set((this._docs || []).map((d) => d.id));
-          const unknownVectorId = vectorsData.documents.find(
-            (row) => !knownDocIds.has(row.id),
-          );
+          const unknownVectorId = vectorsData.documents.find((row) => !knownDocIds.has(row.id));
           if (unknownVectorId) {
-            throw new Error(
-              `Vector payload references unknown doc id: ${unknownVectorId.id}`,
-            );
+            throw new Error(`Vector payload references unknown doc id: ${unknownVectorId.id}`);
           }
 
           this._extractor = await extractorPromise;
@@ -409,10 +391,7 @@ export class HybridSearch {
     });
     const queryVec = Array.from(output.data);
 
-    return rankBySimilarity(queryVec, this._vectors, this.semanticThreshold).slice(
-      0,
-      10,
-    );
+    return rankBySimilarity(queryVec, this._vectors, this.semanticThreshold).slice(0, 10);
   }
 
   mergeResults(fuzzyResults: FuzzyHit[], semanticResults: SemanticHit[]): MergedHit[] {
@@ -466,9 +445,7 @@ export class HybridSearch {
     });
 
     if (!['fuzzy', 'semantic', 'hybrid'].includes(mode)) {
-      throw new Error(
-        `Invalid search mode: "${mode}". Expected 'fuzzy', 'semantic', or 'hybrid'.`,
-      );
+      throw new Error(`Invalid search mode: "${mode}". Expected 'fuzzy', 'semantic', or 'hybrid'.`);
     }
 
     const result: SearchResult = {
