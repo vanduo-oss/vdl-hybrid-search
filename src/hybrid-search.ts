@@ -22,7 +22,7 @@ const CDN = {
   ],
 };
 
-export const VDL_HYBRID_SEARCH_VERSION = '0.1.1';
+export const VDL_HYBRID_SEARCH_VERSION = '0.1.2';
 
 export const DEFAULT_DOCS_BASE_URL = 'https://vanduo-oss.github.io/vd3-docs';
 
@@ -57,10 +57,16 @@ export type SemanticHit = {
   score: number;
 };
 
+export type TitleMatch = 'exact' | 'partial' | 'none';
+
 export type MergedHit = {
   doc: SearchDocument;
   score: number;
   source: 'fuzzy' | 'semantic';
+  /** True when fuzzy title match is soft (not exact). Omitted for semantic hits. */
+  weakMatch?: boolean;
+  /** How the query relates to the doc title (fuzzy-sourced hits only). */
+  titleMatch?: TitleMatch;
 };
 
 export type SearchMode = 'fuzzy' | 'semantic' | 'hybrid';
@@ -84,6 +90,16 @@ export type HybridSearchOptions = {
   maxDocuments?: number;
   maxVectorDimensions?: number;
   semanticBoost?: number;
+  /**
+   * Drop fuzzy merged hits whose final score is below this floor.
+   * Default `0` preserves prior inclusion behavior.
+   */
+  fuzzyMinScore?: number;
+  /**
+   * Added to the fuzzy score when `titleMatch` is `exact`.
+   * Default `0` preserves prior ranking.
+   */
+  titleExactBoost?: number;
   modelName?: string;
   loadFuse?: () => Promise<unknown>;
   loadTransformers?: () => Promise<unknown>;
@@ -183,6 +199,8 @@ export class HybridSearch {
   maxDocuments: number;
   maxVectorDimensions: number;
   semanticBoost: number;
+  fuzzyMinScore: number;
+  titleExactBoost: number;
   modelName: string;
 
   private _loadFuse: () => Promise<unknown>;
@@ -210,6 +228,8 @@ export class HybridSearch {
     this.maxDocuments = options.maxDocuments ?? 5000;
     this.maxVectorDimensions = options.maxVectorDimensions ?? 4096;
     this.semanticBoost = options.semanticBoost ?? 1.0;
+    this.fuzzyMinScore = options.fuzzyMinScore ?? 0;
+    this.titleExactBoost = options.titleExactBoost ?? 0;
     this.modelName = options.modelName ?? 'Xenova/all-MiniLM-L6-v2';
     this._loadFuse = typeof options.loadFuse === 'function' ? options.loadFuse : loadFuseDefault;
     this._loadTransformers =
@@ -394,7 +414,56 @@ export class HybridSearch {
     return rankBySimilarity(queryVec, this._vectors, this.semanticThreshold).slice(0, 10);
   }
 
-  mergeResults(fuzzyResults: FuzzyHit[], semanticResults: SemanticHit[]): MergedHit[] {
+  /**
+   * Classify how a query relates to a document title (case-insensitive).
+   * - exact: normalized query equals normalized title
+   * - partial: shared significant tokens or title contains query / query contains title
+   * - none: otherwise
+   */
+  private _titleMatch(query: string, title: string): TitleMatch {
+    const q = String(query || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    const t = String(title || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    if (!q || !t) return 'none';
+    if (q === t) return 'exact';
+    if (t.includes(q) || q.includes(t)) return 'partial';
+    const qTokens = q.split(' ').filter((tok) => tok.length >= 3);
+    const tTokens = new Set(t.split(' ').filter((tok) => tok.length >= 3));
+    if (qTokens.some((tok) => tTokens.has(tok))) return 'partial';
+    return 'none';
+  }
+
+  /** Map a Fuse hit to a MergedHit with optional quality signals; null if below floor. */
+  private _mapFuzzyHit(fr: FuzzyHit, query?: string): MergedHit | null {
+    let score = 1 - fr.score;
+    const hit: MergedHit = {
+      doc: fr.item,
+      score,
+      source: 'fuzzy',
+    };
+    if (typeof query === 'string' && query.length > 0) {
+      const titleMatch = this._titleMatch(query, String(fr.item?.title || ''));
+      hit.titleMatch = titleMatch;
+      hit.weakMatch = titleMatch !== 'exact';
+      if (titleMatch === 'exact' && this.titleExactBoost) {
+        score += this.titleExactBoost;
+        hit.score = score;
+      }
+    }
+    if (score < this.fuzzyMinScore) return null;
+    return hit;
+  }
+
+  mergeResults(
+    fuzzyResults: FuzzyHit[],
+    semanticResults: SemanticHit[],
+    query?: string,
+  ): MergedHit[] {
     if (!this._docMap) throw new Error('mergeResults requires initFuzzy() to be called first');
 
     const boosted: MergedHit[] = [];
@@ -411,11 +480,11 @@ export class HybridSearch {
       });
     }
 
-    const fuzzyMapped: MergedHit[] = fuzzyResults.map((fr) => ({
-      doc: fr.item,
-      score: 1 - fr.score,
-      source: 'fuzzy',
-    }));
+    const fuzzyMapped: MergedHit[] = [];
+    for (const fr of fuzzyResults) {
+      const mapped = this._mapFuzzyHit(fr, query);
+      if (mapped) fuzzyMapped.push(mapped);
+    }
 
     const seen = new Set<string>();
     const merged: MergedHit[] = [];
@@ -471,13 +540,14 @@ export class HybridSearch {
     }
 
     if (mode === 'hybrid') {
-      result.merged = this.mergeResults(result.fuzzy, result.semantic);
+      result.merged = this.mergeResults(result.fuzzy, result.semantic, normalizedQuery);
     } else if (mode === 'fuzzy') {
-      result.merged = result.fuzzy.map((fr) => ({
-        doc: fr.item,
-        score: 1 - fr.score,
-        source: 'fuzzy' as const,
-      }));
+      const fuzzyMerged: MergedHit[] = [];
+      for (const fr of result.fuzzy) {
+        const mapped = this._mapFuzzyHit(fr, normalizedQuery);
+        if (mapped) fuzzyMerged.push(mapped);
+      }
+      result.merged = fuzzyMerged.slice(0, this.maxResults);
     } else {
       const semanticMerged: MergedHit[] = [];
       for (const sr of result.semantic) {

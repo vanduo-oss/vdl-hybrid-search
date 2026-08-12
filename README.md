@@ -51,6 +51,8 @@ const { merged } = await search.search('narrowing', { mode: 'hybrid' });
 | `queryMinLength` / `queryMaxLength` | `2` / `240` | Query guardrails |
 | `maxDocuments` / `maxVectorDimensions` | `5000` / `4096` | Payload guardrails |
 | `semanticBoost` | `1.0` | Multiplier for semantic scores in merge |
+| `fuzzyMinScore` | `0` | Drop fuzzy merged hits below this score (post `1 - fuseScore` + boost) |
+| `titleExactBoost` | `0` | Add to fuzzy score when normalized query equals doc title |
 | `modelName` | `Xenova/all-MiniLM-L6-v2` | Transformers feature-extraction model |
 | `loadFuse` | CDN import | Inject Fuse module (`{ default: Fuse }` or constructor) |
 | `loadTransformers` | CDN import | Inject `@huggingface/transformers` module |
@@ -62,14 +64,22 @@ const { merged } = await search.search('narrowing', { mode: 'hybrid' });
 - `initSemantic()` — requires fuzzy init; load Transformers + vectors
 - `fuzzySearch(query)` — sync Fuse hits (empty if not ready / invalid query)
 - `semanticSearch(query)` — async MiniLM ranking
-- `search(query, { mode })` — `'fuzzy' | 'semantic' | 'hybrid'` (default hybrid). Semantic failures in hybrid mode degrade to fuzzy without throwing.
-- `mergeResults(fuzzy, semantic)` — score merge + dedupe (requires `initFuzzy`)
+- `search(query, { mode })` — `'fuzzy' | 'semantic' | 'hybrid'` (default hybrid). Semantic failures in hybrid mode degrade to fuzzy without throwing. Fuzzy-sourced `merged` hits include optional `titleMatch` / `weakMatch`.
+- `mergeResults(fuzzy, semantic, query?)` — score merge + dedupe (requires `initFuzzy`). Pass `query` to attach title quality signals on fuzzy hits.
 - `onSemanticProgress(cb)` — download/ready/error events; returns unsubscribe
 - `getDocuments()` / `getDocById(id)` / `isSemanticReady()`
 - `HybridSearch.resetCDNCache()` — clear module caches (tests)
 
 Also exported: `cosineSimilarity`, `rankBySimilarity`, `VDL_HYBRID_SEARCH_VERSION`, guardrails from `.` and `./guardrails/search`.
 
+### Fuzzy match quality signals
+
+Onboarding queries like “TypeScript getting started” can fuzzy-rank near-miss titles (“Getting types for your dependencies”) highly. With defaults (`fuzzyMinScore: 0`, `titleExactBoost: 0`), ranking matches 0.1.1. Consumers can:
+
+- Read `hit.weakMatch` / `hit.titleMatch` and refuse soft matches in tutors.
+- Raise `fuzzyMinScore` or `titleExactBoost` when exact titles should win harder.
+
+`titleMatch` is `exact` when the normalized query equals the title, `partial` when significant tokens or substrings overlap, otherwise `none`. Semantic hits omit these fields.
 ## Injectable loaders & CSP (`onnxWasmPaths`)
 
 Under strict CSP (`script-src 'self'`), do **not** rely on jsDelivr/unpkg dynamic imports:

@@ -15,6 +15,7 @@ export type {
   FuzzyHit,
   SemanticHit,
   SemanticProgress,
+  TitleMatch,
 } from './hybrid-search.js';
 
 export {

@@ -9,7 +9,7 @@ context: |
   Dual QA gates: CI unit/coverage (mocked loaders, no MiniLM download) via test:ci;
   local real Fuse + Transformers MiniLM inference via test:local on developer hardware.
   GitHub Actions CI allowed (format, lint, typecheck, test:ci, build, pack, audit).
-  ts-school dogfoods HybridSearch API (file: until published, then ^0.1.1).
+  ts-school dogfoods HybridSearch API (file: until published, then ^0.1.2).
 
 rules:
   proposal:

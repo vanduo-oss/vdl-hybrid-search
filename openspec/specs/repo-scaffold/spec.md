@@ -21,9 +21,9 @@ The package MUST be publishable as `@vanduo-oss/vdl-hybrid-search` with public
 
 #### Scenario: version sync
 
-- **GIVEN** package version `0.1.1`
+- **GIVEN** package version `0.1.2`
 - **WHEN** smoke tests run
-- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.1.1`
+- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.1.2`
 
 ### Requirement: github-actions-ci
 
