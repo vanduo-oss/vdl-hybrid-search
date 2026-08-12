@@ -8,8 +8,8 @@
 
 - [x] 2.1 Fixture docs for getting-started near-miss
 - [x] 2.2 Unit tests for weak/partial/exact, boost, minScore, mergeResults query opt
-- [ ] 2.3 `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:ci && pnpm build`
+- [x] 2.3 `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:ci && pnpm build`
 
 ## 3. OpenSpec
 
-- [ ] 3.1 `openspec validate --change fuzzy-match-quality-signals --strict`
+- [x] 3.1 `openspec validate --change fuzzy-match-quality-signals --strict`
