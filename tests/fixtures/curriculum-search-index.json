@@ -33,6 +33,40 @@
       "bodyText": "unknown forces narrowing before use; any disables checking.",
       "classes": [],
       "chunks": []
+    },
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "category": "Intro",
+      "tab": "beginner",
+      "route": "/lessons/intro/getting-started",
+      "icon": "ph-rocket-launch",
+      "keywords": ["getting started", "typescript", "intro", "onboarding", "quick start"],
+      "headings": ["Welcome", "First steps"],
+      "bodyText": "Start here for your first TypeScript lesson and project setup.",
+      "classes": [],
+      "chunks": []
+    },
+    {
+      "id": "installing-types",
+      "title": "Getting types for your dependencies",
+      "category": "Tooling",
+      "tab": "beginner",
+      "route": "/lessons/tooling/installing-types",
+      "icon": "ph-package",
+      "keywords": [
+        "getting types",
+        "getting",
+        "typescript",
+        "@types",
+        "definitelytyped",
+        "install",
+        "dependencies"
+      ],
+      "headings": ["Problem", "Install @types"],
+      "bodyText": "Getting TypeScript types for dependencies via DefinitelyTyped packages.",
+      "classes": [],
+      "chunks": []
     }
   ]
 }

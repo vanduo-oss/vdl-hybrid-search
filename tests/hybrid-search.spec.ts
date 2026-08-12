@@ -320,6 +320,8 @@ describe('HybridSearch', () => {
     expect(defaults.vectorsUrl).toBe('./data/vectors.json');
     expect(defaults.fuseThreshold).toBe(0.45);
     expect(defaults.modelName).toBe('Xenova/all-MiniLM-L6-v2');
+    expect(defaults.fuzzyMinScore).toBe(0);
+    expect(defaults.titleExactBoost).toBe(0);
 
     const custom = createSearch({
       fuseThreshold: 0.2,
@@ -330,10 +332,14 @@ describe('HybridSearch', () => {
       maxDocuments: 10,
       maxVectorDimensions: 8,
       semanticBoost: 2,
+      fuzzyMinScore: 0.5,
+      titleExactBoost: 0.2,
       modelName: 'custom/model',
     });
     expect(custom.fuseThreshold).toBe(0.2);
     expect(custom.semanticBoost).toBe(2);
+    expect(custom.fuzzyMinScore).toBe(0.5);
+    expect(custom.titleExactBoost).toBe(0.2);
     expect(custom.modelName).toBe('custom/model');
   });
 
@@ -548,6 +554,79 @@ describe('HybridSearch', () => {
     expect(result.merged.length).toBeGreaterThan(0);
     expect(result.merged[0].source).toBe('fuzzy');
     expect(warn).toHaveBeenCalled();
+  });
+
+  it('marks getting-started near-miss titles as weak partial matches', async () => {
+    stubFetch();
+    const search = createSearch();
+    await search.initFuzzy();
+
+    // "getting started" fuzzy-ranks the near-miss title (same dogfood failure mode).
+    const result = await search.search('getting started', { mode: 'fuzzy' });
+    const nearMiss = result.merged.find((m) => m.doc.id === 'installing-types');
+    const starter = result.merged.find((m) => m.doc.id === 'getting-started');
+
+    expect(nearMiss).toBeTruthy();
+    expect(nearMiss?.source).toBe('fuzzy');
+    expect(nearMiss?.titleMatch).toBe('partial');
+    expect(nearMiss?.weakMatch).toBe(true);
+
+    expect(starter).toBeTruthy();
+    expect(starter?.titleMatch).toBe('exact');
+    expect(starter?.weakMatch).toBe(false);
+
+    const exact = await search.search('Getting Started', { mode: 'fuzzy' });
+    const exactHit = exact.merged.find((m) => m.doc.id === 'getting-started');
+    expect(exactHit?.titleMatch).toBe('exact');
+    expect(exactHit?.weakMatch).toBe(false);
+  });
+
+  it('applies fuzzyMinScore and titleExactBoost without changing defaults', async () => {
+    stubFetch();
+    const baseline = createSearch();
+    await baseline.initFuzzy();
+    const baselineMerged = await baseline.search('Getting Started', { mode: 'fuzzy' });
+    expect(baseline.fuzzyMinScore).toBe(0);
+    expect(baseline.titleExactBoost).toBe(0);
+
+    const boosted = createSearch({ titleExactBoost: 0.5 });
+    await boosted.initFuzzy();
+    const boostedMerged = await boosted.search('Getting Started', { mode: 'fuzzy' });
+    const baseExact = baselineMerged.merged.find((m) => m.doc.id === 'getting-started');
+    const boostExact = boostedMerged.merged.find((m) => m.doc.id === 'getting-started');
+    expect(baseExact).toBeTruthy();
+    expect(boostExact).toBeTruthy();
+    expect(boostExact!.score).toBeCloseTo(baseExact!.score + 0.5, 5);
+
+    const filtered = createSearch({ fuzzyMinScore: 0.999 });
+    await filtered.initFuzzy();
+    const filteredMerged = await filtered.search('TypeScript getting started', { mode: 'fuzzy' });
+    expect(filteredMerged.merged.every((m) => m.score >= 0.999)).toBe(true);
+  });
+
+  it('mergeResults optional query enables title signals on fuzzy hits', async () => {
+    const search = createSearch();
+    (search as unknown as { _docs: unknown; _docMap: Map<string, unknown> })._docs = mockDocs;
+    (search as unknown as { _docMap: Map<string, unknown> })._docMap = new Map(
+      mockDocs.map((d) => [d.id, d]),
+    );
+    const starter = mockDocs.find((d) => d.id === 'getting-started')!;
+    const nearMiss = mockDocs.find((d) => d.id === 'installing-types')!;
+    const merged = search.mergeResults(
+      [
+        { item: starter, score: 0.05 },
+        { item: nearMiss, score: 0.2 },
+      ],
+      [],
+      'Getting Started',
+    );
+    expect(merged.find((m) => m.doc.id === 'getting-started')?.titleMatch).toBe('exact');
+    expect(merged.find((m) => m.doc.id === 'installing-types')?.titleMatch).toBe('partial');
+    expect(merged.find((m) => m.doc.id === 'installing-types')?.weakMatch).toBe(true);
+
+    const withoutQuery = search.mergeResults([{ item: starter, score: 0.05 }], []);
+    expect(withoutQuery[0].titleMatch).toBeUndefined();
+    expect(withoutQuery[0].weakMatch).toBeUndefined();
   });
 
   it('semantic-only mode skips missing docs in merged mapping', async () => {
