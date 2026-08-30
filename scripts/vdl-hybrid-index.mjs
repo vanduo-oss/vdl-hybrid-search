@@ -22,10 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import {
-  EMBEDDING_PRESETS,
-  buildEmbedInput,
-} from './lib/embedding-presets.mjs';
+import { EMBEDDING_PRESETS, buildEmbedInput } from './lib/embedding-presets.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -53,12 +50,31 @@ function loadConfig(args) {
     fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
   }
   return {
-    site: args.site || fileConfig.site || process.env.VDL_SITE || process.env.VD3_DOCS_SITE || 'https://vanduo-oss.github.io/vd3-docs',
-    navPath: args.nav || fileConfig.navPath || process.env.VDL_NAV_PATH || process.env.VD3_DOCS_PATH || null,
-    navUrl: fileConfig.navUrl || process.env.VDL_NAV_URL || process.env.VD3_DOCS_NAV_URL || 'https://raw.githubusercontent.com/vanduo-oss/vd3-docs/main/src/nav.ts',
+    site:
+      args.site ||
+      fileConfig.site ||
+      process.env.VDL_SITE ||
+      process.env.VD3_DOCS_SITE ||
+      'https://vanduo-oss.github.io/vd3-docs',
+    navPath:
+      args.nav ||
+      fileConfig.navPath ||
+      process.env.VDL_NAV_PATH ||
+      process.env.VD3_DOCS_PATH ||
+      null,
+    navUrl:
+      fileConfig.navUrl ||
+      process.env.VDL_NAV_URL ||
+      process.env.VD3_DOCS_NAV_URL ||
+      'https://raw.githubusercontent.com/vanduo-oss/vd3-docs/main/src/nav.ts',
     outDir: args.out || fileConfig.outDir || path.join(PROJECT_ROOT, 'data'),
     preset: args.preset || fileConfig.preset || process.env.VDL_PRESET || 'embeddinggemma',
-    fetchConcurrency: Number(fileConfig.fetchConcurrency || process.env.VDL_FETCH_CONCURRENCY || process.env.VD3_DOCS_FETCH_CONCURRENCY || 6),
+    fetchConcurrency: Number(
+      fileConfig.fetchConcurrency ||
+        process.env.VDL_FETCH_CONCURRENCY ||
+        process.env.VD3_DOCS_FETCH_CONCURRENCY ||
+        6,
+    ),
     contentSelector: fileConfig.contentSelector || 'doc-content',
   };
 }
@@ -212,7 +228,9 @@ function pageUrl(site, route) {
 }
 
 function normalizeIcon(icon) {
-  const value = String(icon || 'file-text').trim().replace(/^ph-/, '');
+  const value = String(icon || 'file-text')
+    .trim()
+    .replace(/^ph-/, '');
   return value || 'file-text';
 }
 

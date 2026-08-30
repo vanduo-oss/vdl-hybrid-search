@@ -137,9 +137,7 @@ describe('confidence', () => {
     expect(weakFuzzy).toHaveLength(1);
     expect(weakFuzzy[0].source).toBe('semantic');
     expect(filterConfidentHits([])).toEqual([]);
-    expect(filterConfidentHits([{ doc: mockDocs[0], score: 0.4, source: 'semantic' }])).toEqual(
-      [],
-    );
+    expect(filterConfidentHits([{ doc: mockDocs[0], score: 0.4, source: 'semantic' }])).toEqual([]);
   });
 });
 
@@ -415,9 +413,9 @@ describe('HybridSearch', () => {
 
     expect(new HybridSearch({ quantized: false }).dtype).toBe('fp32');
     expect(new HybridSearch({ quantized: true }).dtype).toBe('q8');
-    expect(
-      new HybridSearch({ embeddingPreset: 'none', modelName: 'custom/only' }).modelName,
-    ).toBe('custom/only');
+    expect(new HybridSearch({ embeddingPreset: 'none', modelName: 'custom/only' }).modelName).toBe(
+      'custom/only',
+    );
   });
 
   it('initFuzzy loads index, rejects bad payloads, and exposes docs', async () => {

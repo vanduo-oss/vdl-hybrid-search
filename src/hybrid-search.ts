@@ -10,16 +10,8 @@ import {
   validateSearchQuery,
   validateVectorPayload,
 } from './guardrails/search.js';
-import {
-  type ConfidenceOptions,
-  DEFAULT_CONFIDENCE,
-  filterConfidentHits,
-} from './confidence.js';
-import {
-  type EmbeddingPresetId,
-  prefixQuery,
-  resolvePresetConfig,
-} from './embedding-presets.js';
+import { type ConfidenceOptions, DEFAULT_CONFIDENCE, filterConfidentHits } from './confidence.js';
+import { type EmbeddingPresetId, prefixQuery, resolvePresetConfig } from './embedding-presets.js';
 
 const CDN = {
   fuse: [

@@ -27,7 +27,10 @@ export const EMBEDDING_PRESETS = {
 };
 
 export function prefixDocument(title, text, presetId = 'embeddinggemma') {
-  const t = String(title || 'none').replace(/\s+/g, ' ').trim() || 'none';
+  const t =
+    String(title || 'none')
+      .replace(/\s+/g, ' ')
+      .trim() || 'none';
   const body = String(text || '').trim();
   if (presetId === 'e5') return `passage: ${t}. ${body}`.trim();
   if (presetId === 'embeddinggemma') return `title: ${t} | text: ${body}`;

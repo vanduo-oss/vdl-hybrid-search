@@ -23,10 +23,7 @@ export const DEFAULT_CONFIDENCE: Required<ConfidenceOptions> = {
   weakBodyRelative: 0.85,
 };
 
-export function adaptiveCutoff(
-  topScore: number,
-  opts: Required<ConfidenceOptions>,
-): number {
+export function adaptiveCutoff(topScore: number, opts: Required<ConfidenceOptions>): number {
   if (!(topScore > 0) || !Number.isFinite(topScore)) return opts.absFloor;
   return Math.max(opts.absFloor, topScore * opts.relativeTopFraction);
 }

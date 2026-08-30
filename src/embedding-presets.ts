@@ -49,8 +49,7 @@ export function prefixQuery(text: string, queryPrefix: string): string {
   const raw = String(text || '').trim();
   if (!queryPrefix) return raw;
   if (raw.startsWith(queryPrefix)) return raw;
-  if (raw.startsWith('task:') || raw.startsWith('query:') || raw.startsWith('title:'))
-    return raw;
+  if (raw.startsWith('task:') || raw.startsWith('query:') || raw.startsWith('title:')) return raw;
   return `${queryPrefix}${raw}`;
 }
 
@@ -93,9 +92,7 @@ export function documentEmbedText(doc: {
   return parts.join('. ');
 }
 
-export function resolvePresetConfig(
-  presetId: EmbeddingPresetId,
-): EmbeddingPresetConfig | null {
+export function resolvePresetConfig(presetId: EmbeddingPresetId): EmbeddingPresetConfig | null {
   if (presetId === 'none') return null;
   return EMBEDDING_PRESETS[presetId];
 }

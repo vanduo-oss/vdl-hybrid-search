@@ -29,11 +29,7 @@ export {
 
 export type { EmbeddingPresetId, EmbeddingPresetConfig } from './embedding-presets.js';
 
-export {
-  filterConfidentHits,
-  adaptiveCutoff,
-  DEFAULT_CONFIDENCE,
-} from './confidence.js';
+export { filterConfidentHits, adaptiveCutoff, DEFAULT_CONFIDENCE } from './confidence.js';
 
 export type { ConfidenceOptions } from './confidence.js';
 
