@@ -1,6 +1,6 @@
 {
   "name": "@vanduo-oss/vdl-hybrid-search",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Vanduo Labs headless hybrid fuzzy+semantic search (VdlHybridSearch)",
   "type": "module",
   "homepage": "https://github.com/vanduo-oss/vdl-hybrid-search#readme",
@@ -49,6 +49,9 @@
     },
     "./package.json": "./package.json"
   },
+  "bin": {
+    "vdl-hybrid-index": "./scripts/vdl-hybrid-index.mjs"
+  },
   "scripts": {
     "build": "node scripts/clean-dist.mjs && vite build && tsc -p tsconfig.build.json",
     "prepack": "pnpm run build",
@@ -65,7 +68,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@huggingface/transformers": "^3.8.1",
+    "@huggingface/transformers": "^4.0.0",
     "@types/node": "26.1.0",
     "@typescript-eslint/parser": "8.62.0",
     "@vitest/coverage-v8": "^3.2.7",

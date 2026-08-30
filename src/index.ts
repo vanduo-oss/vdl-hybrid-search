@@ -19,6 +19,25 @@ export type {
 } from './hybrid-search.js';
 
 export {
+  EMBEDDING_PRESETS,
+  prefixQuery,
+  prefixDocument,
+  documentEmbedText,
+  resolvePresetConfig,
+  QUERY_PREFIX_GEMMA,
+} from './embedding-presets.js';
+
+export type { EmbeddingPresetId, EmbeddingPresetConfig } from './embedding-presets.js';
+
+export {
+  filterConfidentHits,
+  adaptiveCutoff,
+  DEFAULT_CONFIDENCE,
+} from './confidence.js';
+
+export type { ConfidenceOptions } from './confidence.js';
+
+export {
   normalizeSearchQuery,
   validateSearchQuery,
   validateSearchIndexDocument,

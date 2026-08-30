@@ -1,6 +1,6 @@
 /**
  * @vanduo-oss/vdl-hybrid-search — VdlHybridSearch headless engine.
- * Fuzzy (Fuse.js) + semantic (Transformers.js MiniLM) hybrid search.
+ * Fuzzy (Fuse.js) + semantic (Transformers.js) hybrid search.
  * Zero runtime npm dependencies; libraries load from CDN unless injectors are provided.
  */
 
@@ -10,6 +10,16 @@ import {
   validateSearchQuery,
   validateVectorPayload,
 } from './guardrails/search.js';
+import {
+  type ConfidenceOptions,
+  DEFAULT_CONFIDENCE,
+  filterConfidentHits,
+} from './confidence.js';
+import {
+  type EmbeddingPresetId,
+  prefixQuery,
+  resolvePresetConfig,
+} from './embedding-presets.js';
 
 const CDN = {
   fuse: [
@@ -17,12 +27,12 @@ const CDN = {
     'https://unpkg.com/fuse.js@7/dist/fuse.basic.mjs',
   ],
   transformers: [
-    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/+esm',
-    'https://esm.sh/@huggingface/transformers@3',
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4/+esm',
+    'https://esm.sh/@huggingface/transformers@4',
   ],
 };
 
-export const VDL_HYBRID_SEARCH_VERSION = '0.1.2';
+export const VDL_HYBRID_SEARCH_VERSION = '0.2.0';
 
 export const DEFAULT_DOCS_BASE_URL = 'https://vanduo-oss.github.io/vd3-docs';
 
@@ -85,6 +95,8 @@ export type HybridSearchOptions = {
   fuseThreshold?: number;
   semanticThreshold?: number;
   maxResults?: number;
+  /** Cap semantic hits before merge (default 10). */
+  maxSemanticResults?: number;
   queryMinLength?: number;
   queryMaxLength?: number;
   maxDocuments?: number;
@@ -100,7 +112,20 @@ export type HybridSearchOptions = {
    * Default `0` preserves prior ranking.
    */
   titleExactBoost?: number;
+  /** Bundled model + dtype + prefix strategy. Default `embeddinggemma`. */
+  embeddingPreset?: EmbeddingPresetId;
   modelName?: string;
+  /** Transformers.js v4 dtype (default from preset, usually `q8`). */
+  dtype?: string;
+  /** Prepended to queries before embedding. Overrides preset. */
+  queryPrefix?: string;
+  /** @deprecated Use `dtype` instead. Translated to `dtype: 'q8' | 'fp32'`. */
+  quantized?: boolean;
+  /**
+   * Adaptive display cutoff applied in mergeResults.
+   * Default: enabled with vd3-docs tuning. Pass `false` to disable.
+   */
+  confidence?: false | ConfidenceOptions;
   loadFuse?: () => Promise<unknown>;
   loadTransformers?: () => Promise<unknown>;
   /**
@@ -112,6 +137,13 @@ export type HybridSearchOptions = {
 };
 
 type VectorRow = { id: string; embedding: number[] };
+type VectorPayload = {
+  model?: string;
+  source?: string;
+  generatedAt?: string;
+  dimensions?: number;
+  documents: VectorRow[];
+};
 
 export function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0;
@@ -173,6 +205,14 @@ async function loadTransformersDefault(): Promise<unknown> {
   throw lastErr;
 }
 
+function resolvePipelineDtype(options: HybridSearchOptions, presetDtype: string): string {
+  if (typeof options.dtype === 'string' && options.dtype.trim()) return options.dtype.trim();
+  if (typeof options.quantized === 'boolean') {
+    return options.quantized ? 'q8' : 'fp32';
+  }
+  return presetDtype;
+}
+
 type FuseLike = {
   search: (query: string, opts?: { limit?: number }) => FuzzyHit[];
 };
@@ -194,6 +234,7 @@ export class HybridSearch {
   fuseThreshold: number;
   semanticThreshold: number;
   maxResults: number;
+  maxSemanticResults: number;
   queryMinLength: number;
   queryMaxLength: number;
   maxDocuments: number;
@@ -201,8 +242,12 @@ export class HybridSearch {
   semanticBoost: number;
   fuzzyMinScore: number;
   titleExactBoost: number;
+  embeddingPreset: EmbeddingPresetId;
   modelName: string;
+  dtype: string;
+  queryPrefix: string;
 
+  private _confidence: false | Required<ConfidenceOptions>;
   private _loadFuse: () => Promise<unknown>;
   private _loadTransformers: () => Promise<unknown>;
   private _onnxWasmPaths: string | null;
@@ -218,11 +263,16 @@ export class HybridSearch {
   private _progressSubscribers: Array<(data: SemanticProgress) => void> = [];
 
   constructor(options: HybridSearchOptions = {}) {
+    const presetId = options.embeddingPreset ?? 'embeddinggemma';
+    const preset = resolvePresetConfig(presetId);
+
+    this.embeddingPreset = presetId;
     this.indexUrl = options.indexUrl ?? './data/search-index.json';
     this.vectorsUrl = options.vectorsUrl ?? './data/vectors.json';
     this.fuseThreshold = options.fuseThreshold ?? 0.45;
     this.semanticThreshold = options.semanticThreshold ?? 0.3;
     this.maxResults = options.maxResults ?? 20;
+    this.maxSemanticResults = options.maxSemanticResults ?? 10;
     this.queryMinLength = options.queryMinLength ?? 2;
     this.queryMaxLength = options.queryMaxLength ?? 240;
     this.maxDocuments = options.maxDocuments ?? 5000;
@@ -230,7 +280,17 @@ export class HybridSearch {
     this.semanticBoost = options.semanticBoost ?? 1.0;
     this.fuzzyMinScore = options.fuzzyMinScore ?? 0;
     this.titleExactBoost = options.titleExactBoost ?? 0;
-    this.modelName = options.modelName ?? 'Xenova/all-MiniLM-L6-v2';
+    this.modelName =
+      options.modelName ?? preset?.modelName ?? 'onnx-community/embeddinggemma-300m-ONNX';
+    this.dtype = resolvePipelineDtype(options, preset?.dtype ?? 'q8');
+    this.queryPrefix = options.queryPrefix ?? preset?.queryPrefix ?? '';
+
+    if (options.confidence === false) {
+      this._confidence = false;
+    } else {
+      this._confidence = { ...DEFAULT_CONFIDENCE, ...options.confidence };
+    }
+
     this._loadFuse = typeof options.loadFuse === 'function' ? options.loadFuse : loadFuseDefault;
     this._loadTransformers =
       typeof options.loadTransformers === 'function'
@@ -330,7 +390,7 @@ export class HybridSearch {
           message: 'Loading search model (one-time download)...',
         });
 
-        let vectorsData: { documents: VectorRow[] };
+        let vectorsData: VectorPayload;
         try {
           const transformers = (await this._loadTransformers()) as {
             env?: { backends?: { onnx?: { wasm?: { wasmPaths?: string } } } };
@@ -343,7 +403,7 @@ export class HybridSearch {
           this._applyOnnxWasmPaths(transformers);
 
           const extractorPromise = transformers.pipeline('feature-extraction', this.modelName, {
-            quantized: true,
+            dtype: this.dtype,
             progress_callback: (progress: { status?: string; loaded?: number; total?: number }) => {
               if (progress?.status === 'progress' && progress.total) {
                 this._emitSemanticProgress({
@@ -357,8 +417,18 @@ export class HybridSearch {
 
           vectorsData = await fetch(this.vectorsUrl).then(async (r) => {
             if (!r.ok) throw new Error(`Failed to load vectors: ${r.status}`);
-            return r.json() as Promise<{ documents: VectorRow[] }>;
+            return r.json() as Promise<VectorPayload>;
           });
+
+          if (
+            typeof vectorsData.model === 'string' &&
+            vectorsData.model.trim() &&
+            vectorsData.model.trim() !== this.modelName
+          ) {
+            console.warn(
+              `[HybridSearch] vectors.json model "${vectorsData.model}" differs from active modelName "${this.modelName}". Re-index with the same model for accurate semantic search.`,
+            );
+          }
 
           const vectorsCheck = validateVectorPayload(vectorsData, {
             maxDocuments: this.maxDocuments,
@@ -405,13 +475,17 @@ export class HybridSearch {
     if (!check.allowed) return [];
     if (!this._extractor || !this._vectors) return [];
 
-    const output = await this._extractor(normalizedQuery, {
+    const prefixedQuery = prefixQuery(normalizedQuery, this.queryPrefix);
+    const output = await this._extractor(prefixedQuery, {
       pooling: 'mean',
       normalize: true,
     });
     const queryVec = Array.from(output.data);
 
-    return rankBySimilarity(queryVec, this._vectors, this.semanticThreshold).slice(0, 10);
+    return rankBySimilarity(queryVec, this._vectors, this.semanticThreshold).slice(
+      0,
+      this.maxSemanticResults,
+    );
   }
 
   /**
@@ -459,6 +533,11 @@ export class HybridSearch {
     return hit;
   }
 
+  private _applyConfidence(hits: MergedHit[]): MergedHit[] {
+    if (this._confidence === false) return hits;
+    return filterConfidentHits(hits, this._confidence);
+  }
+
   mergeResults(
     fuzzyResults: FuzzyHit[],
     semanticResults: SemanticHit[],
@@ -496,7 +575,8 @@ export class HybridSearch {
       }
     }
 
-    return merged.slice(0, this.maxResults);
+    const capped = merged.slice(0, this.maxResults);
+    return this._applyConfidence(capped);
   }
 
   async search(
@@ -547,7 +627,7 @@ export class HybridSearch {
         const mapped = this._mapFuzzyHit(fr, normalizedQuery);
         if (mapped) fuzzyMerged.push(mapped);
       }
-      result.merged = fuzzyMerged.slice(0, this.maxResults);
+      result.merged = this._applyConfidence(fuzzyMerged.slice(0, this.maxResults));
     } else {
       const semanticMerged: MergedHit[] = [];
       for (const sr of result.semantic) {
@@ -555,7 +635,7 @@ export class HybridSearch {
         if (!doc) continue;
         semanticMerged.push({ doc, score: sr.score, source: 'semantic' });
       }
-      result.merged = semanticMerged;
+      result.merged = this._applyConfidence(semanticMerged);
     }
 
     return result;

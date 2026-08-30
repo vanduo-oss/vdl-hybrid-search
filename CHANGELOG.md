@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 — EmbeddingGemma presets, Transformers.js v4, confidence cutoff
+
+**Migration:** Re-index `vectors.json` when upgrading from 0.1.x. The default model is now
+`onnx-community/embeddinggemma-300m-ONNX` (768 dims). Pass `embeddingPreset: 'minilm'` until
+vectors are rebuilt, or regenerate with `vdl-hybrid-index --preset embeddinggemma`.
+
+### Added
+
+- `embeddingPreset`: `embeddinggemma` (default), `minilm`, `e5`, `none` — bundles model, dtype,
+  dimensions, and query/document prefix strategy.
+- Exported `EMBEDDING_PRESETS`, `prefixQuery`, `prefixDocument`, `documentEmbedText`.
+- Transformers.js v4 `dtype` pipeline option (legacy `quantized` translated to `dtype`).
+- Adaptive confidence cutoff in `mergeResults` (default on; `confidence: false` to disable).
+- `maxSemanticResults` option (default 10) replacing hardcoded semantic slice.
+- Warning when `vectors.json.model` differs from active `modelName`.
+- `vdl-hybrid-index` CLI (`bin`) for config-driven index + vector generation.
+
+### Changed
+
+- CDN default: `@huggingface/transformers@4`.
+- Default `modelName`: EmbeddingGemma ONNX (was MiniLM).
+
 ## 0.1.2 — fuzzy match quality signals
 
 - Optional `fuzzyMinScore` and `titleExactBoost` (defaults `0`) so ranking/inclusion stay identical unless opted in.

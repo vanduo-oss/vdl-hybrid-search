@@ -35,7 +35,7 @@ beforeAll(async () => {
     options?: Record<string, unknown>,
   ) => Promise<Extractor>;
   extractor = await createExtractor('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-    quantized: true,
+    dtype: 'q8',
   });
 
   const documents = [];
@@ -67,7 +67,9 @@ describe('local inference e2e', () => {
     const search = new HybridSearch({
       indexUrl: 'https://local.test/index.json',
       vectorsUrl: 'https://local.test/vectors.json',
+      embeddingPreset: 'minilm',
       semanticThreshold: 0.15,
+      confidence: false,
       loadFuse: async () => ({ default: Fuse }),
       loadTransformers: async () => ({
         env,
