@@ -1,6 +1,7 @@
 {
   "name": "@vanduo-oss/vdl-hybrid-search",
   "version": "0.2.0",
+  "private": true,
   "description": "Vanduo Labs headless hybrid fuzzy+semantic search (VdlHybridSearch)",
   "type": "module",
   "homepage": "https://github.com/vanduo-oss/vdl-hybrid-search#readme",
@@ -13,9 +14,6 @@
   },
   "license": "MIT",
   "author": "vanduo-oss",
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [
     "vanduo",
     "search",
@@ -55,7 +53,6 @@
   "scripts": {
     "build": "node scripts/clean-dist.mjs && vite build && tsc -p tsconfig.build.json",
     "prepack": "pnpm run build",
-    "prepublishOnly": "pnpm run build && pnpm run test:ci",
     "index": "node scripts/hybrid-search-indexer.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

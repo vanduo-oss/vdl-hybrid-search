@@ -2,34 +2,34 @@
 
 ## Purpose
 
-Package scaffold, publish metadata, and GitHub Actions CI for the publishable
-`@vanduo-oss/vdl-hybrid-search` library.
+Package scaffold, Labs-sibling metadata, and GitHub Actions CI for
+`@vanduo-oss/vdl-hybrid-search` (not a public npm package).
 
 ## Requirements
 
 ### Requirement: package-metadata
 
-The package MUST be publishable as `@vanduo-oss/vdl-hybrid-search` with public
-`publishConfig`, dual ESM/CJS exports, typed entry points, and MUST NOT set
-`"private": true` once prepared for npm release.
+The package MUST declare `@vanduo-oss/vdl-hybrid-search` with dual ESM/CJS
+exports and typed entry points. It MUST be a Labs sibling repo
+(`"private": true`) and MUST NOT declare `publishConfig` for public npm.
 
-#### Scenario: package is not private
+#### Scenario: package is private Labs sibling
 
-- **WHEN** `package.json` is inspected for a release candidate
-- **THEN** `"private"` MUST be absent or false
-- **AND** `publishConfig.access` MUST be `public`
+- **WHEN** `package.json` is inspected
+- **THEN** `"private"` MUST be `true`
+- **AND** `publishConfig` MUST be absent
 
 #### Scenario: version sync
 
-- **GIVEN** package version `0.1.2`
+- **GIVEN** package version `0.2.0`
 - **WHEN** smoke tests run
-- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.1.2`
+- **THEN** `VDL_HYBRID_SEARCH_VERSION` equals `0.2.0`
 
 ### Requirement: github-actions-ci
 
 The repository MUST include a GitHub Actions workflow on push/PR to `main` that
-runs format check, lint, typecheck, `test:ci`, build, `pnpm pack --dry-run`, and
-dependency audit.
+runs format check, lint, typecheck, `test:ci`, build, and dependency audit. It
+MUST NOT run npm publish or treat the package as a registry release.
 
 #### Scenario: CI does not require local inference gate
 

@@ -32,5 +32,4 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run test:ci
       - run: pnpm run build
-      - run: pnpm pack --dry-run
       - run: pnpm audit --prod
