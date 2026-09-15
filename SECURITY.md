@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-Security fixes are accepted for the latest published `0.1.x` release of
-`@vanduo-oss/vdl-hybrid-search`.
+Security fixes are accepted for the latest `0.1.x` on the default branch of
+`@vanduo-oss/vdl-hybrid-search` (sibling `link:` consumption; not published on npm).
 
 ## Reporting a vulnerability
 
